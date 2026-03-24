@@ -1,0 +1,14 @@
+pandas
+numpy
+scikit-learn
+lightgbm
+mlflow
+python-dateutil
+pyyaml
+pytest
+evidently
+prefect
+fastapi
+uvicorn
+python-dotenv
+catboost

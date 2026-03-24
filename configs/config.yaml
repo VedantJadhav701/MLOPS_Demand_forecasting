@@ -1,0 +1,46 @@
+data:
+  path: data/demand_forecasting_dataset.csv
+  date_column: date
+  target: target_demand
+
+features:
+  lag_days: [1, 2, 3, 7, 14, 21, 28]
+  rolling_windows: [3, 7, 14, 28]
+  use_price_features: true
+  use_trend_features: true
+
+model:
+  type: stacking
+
+  lgb_params:
+    objective: regression
+    metric: rmse
+    n_estimators: 3000
+    learning_rate: 0.02
+    num_leaves: 63
+    max_depth: 10
+    min_data_in_leaf: 15
+    feature_fraction: 0.85
+    bagging_fraction: 0.85
+    bagging_freq: 5
+    lambda_l1: 0.1
+    lambda_l2: 0.1
+    random_state: 42
+
+  cb_params:
+    loss_function: RMSE
+    iterations: 3000
+    learning_rate: 0.03
+    depth: 8
+    l2_leaf_reg: 3.0
+    random_seed: 42
+    verbose: 0
+
+  stacking:
+    lgb_weight: 0.5
+    cb_weight: 0.5
+
+  # Quality gates
+  rmse_threshold: 6.0
+  mape_threshold: 18.0
+  r2_threshold: 0.65

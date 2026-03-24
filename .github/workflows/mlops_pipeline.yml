@@ -1,0 +1,154 @@
+name: MLOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "configs/**"
+      - "data/**"
+      - "requirements.txt"
+      - "Dockerfile"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "src/**"
+      - "configs/**"
+      - "data/**"
+      - "requirements.txt"
+      - "Dockerfile"
+
+jobs:
+
+  # -----------------------------------------
+  # CI JOB: Test and Validate
+  # -----------------------------------------
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest tests/
+
+      - name: Notify failure
+        if: failure()
+        run: echo "CI Pipeline failed!"
+
+  # -----------------------------------------
+  # TRAIN + REGISTER MODEL
+  # -----------------------------------------
+  train-model:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    outputs:
+      deploy: ${{ steps.check_deploy.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run training pipeline
+        run: |
+          python -m src.pipeline.train_pipeline
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Check deploy flag
+        id: check_deploy
+        run: |
+          if [ -f deploy_flag.txt ]; then
+            echo "deploy=true" >> $GITHUB_OUTPUT
+            echo "Model promoted. Triggering deployment."
+          else
+            echo "deploy=false" >> $GITHUB_OUTPUT
+            echo "Model not promoted. Skipping deployment."
+          fi
+
+      - name: Notify failure
+        if: failure()
+        run: echo "Training Pipeline failed!"
+
+  # -----------------------------------------
+  # DOCKER: Build and Push to Registry
+  # -----------------------------------------
+  docker-push:
+    runs-on: ubuntu-latest
+    needs: train-model
+    if: needs.train-model.outputs.deploy == 'true'
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest
+
+      - name: Notify failure
+        if: failure()
+        run: echo "Docker Build/Push failed!"
+
+  # -----------------------------------------
+  # DEPLOY: Production Server (SSH)
+  # -----------------------------------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker-push
+    if: needs.train-model.outputs.deploy == 'true'
+    environment:
+      name: production
+    steps:
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+          script: |
+              docker pull ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest
+              docker stop demand-mlops || true
+              docker rm demand-mlops || true
+              docker run -d \
+                --name demand-mlops \
+                -p 8000:8000 \
+                ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest
+
+      - name: Notify failure
+        if: failure()
+        run: echo "Production Deployment failed!"
