@@ -136,7 +136,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mlruns-artifact
-          path: mlruns
+          path: mlruns/
+
+      - name: Verify mlruns path
+        run: |
+          ls -la
+          ls -la mlruns/
 
       - name: Download deploy flag
         uses: actions/download-artifact@v4

@@ -5,7 +5,14 @@ from fastapi import FastAPI
 
 from src.features.feature_engineering import build_features
 
+import os
+import mlflow
+
+# Set tracking URI to local mlruns (inside container)
+# Must point to the /app/mlruns directory where the artifacts are copied
 MODEL_NAME = "demand_forecasting_model"
+tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:///app/mlruns")
+mlflow.set_tracking_uri(tracking_uri)
 
 app = FastAPI()
 
@@ -14,7 +21,15 @@ with open("configs/config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 # load model from registry
-model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/Production")
+try:
+    print(f"Attempting to load model '{MODEL_NAME}' from Production stage...")
+    print(f"Tracking URI: {mlflow.get_tracking_uri()}")
+    model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/Production")
+    print("Model loaded successfully!")
+except Exception as e:
+    print(f"CRITICAL: Failed to load model. Error: {str(e)}")
+    # Fallback or initialization indicator
+    model = None
 
 
 @app.get("/")
