@@ -12,7 +12,7 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Fix MLflow absolute paths (Windows -> Linux)
-RUN find mlruns -name "meta.yaml" -exec sed -i 's|file:///C:/Users/HP/projects/MLOPS_demand_forecasting/mlruns|file:///app/mlruns|g' {} +
+RUN if [ -d "mlruns" ]; then find mlruns -name "meta.yaml" -exec sed -i 's|file:///C:/Users/HP/projects/MLOPS_demand_forecasting/mlruns|file:///app/mlruns|g' {} +; else echo "WARNING: mlruns not found during build context load"; fi
 
 EXPOSE 8000
 
