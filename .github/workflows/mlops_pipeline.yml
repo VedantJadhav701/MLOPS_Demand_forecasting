@@ -100,6 +100,20 @@ jobs:
             echo "Model not promoted. Skipping deployment."
           fi
 
+      - name: Upload mlruns
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlruns-artifact
+          path: mlruns/
+          retention-days: 1
+
+      - name: Upload deploy flag
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-flag
+          path: deploy_flag.txt
+          retention-days: 1
+
       - name: Notify failure
         if: failure()
         run: echo "Training Pipeline failed!"
