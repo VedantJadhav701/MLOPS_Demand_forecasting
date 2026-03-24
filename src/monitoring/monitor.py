@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from evidently import Report
+from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset, DataQualityPreset
 
 def run_drift_check(reference_df: pd.DataFrame, current_df: pd.DataFrame):
