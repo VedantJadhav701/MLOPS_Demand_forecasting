@@ -86,6 +86,7 @@ jobs:
           python -m src.pipeline.train_pipeline
         env:
           GITHUB_SHA: ${{ github.sha }}
+          DATA_PATH: "data/demand_forecasting_dataset.csv"
 
       - name: Check deploy flag
         id: check_deploy

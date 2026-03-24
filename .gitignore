@@ -29,7 +29,8 @@ mlruns.db
 catboost_info/
 
 # Data & Models
-data/*.csv
+# data/*.csv
+!data/demand_forecasting_dataset.csv
 data/*.parquet
 data/*.gz
 models/*.pkl

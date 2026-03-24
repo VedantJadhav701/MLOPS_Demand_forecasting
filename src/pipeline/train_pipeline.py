@@ -91,7 +91,7 @@ def run_pipeline(is_retraining=False):
         # ----------------------
         # LOAD CONFIG
         # ----------------------
-        config_path = Path(__file__).parent.parent.parent / "configs" / "config.yaml"
+        config_path = Path(__file__).resolve().parent.parent.parent / "configs" / "config.yaml"
 
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -101,11 +101,12 @@ def run_pipeline(is_retraining=False):
         # ----------------------
         # LOAD DATA
         # ----------------------
+        data_path = os.getenv("DATA_PATH", config["data"]["path"])
         df = load_data(
-            config["data"]["path"],
+            data_path,
             config["data"]["date_column"]
         )
-        logger.info(f"Data loaded: {len(df)} records")
+        logger.info(f"Data loaded from {data_path}: {len(df)} records")
 
         # ----------------------
         # FEATURE ENGINEERING
