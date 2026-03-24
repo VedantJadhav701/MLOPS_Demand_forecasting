@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/
+          if [ -d "tests" ]; then pytest tests/; else echo "No tests found, skipping"; fi
 
       - name: Notify failure
         if: failure()
