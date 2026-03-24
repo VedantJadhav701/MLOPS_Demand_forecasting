@@ -163,20 +163,9 @@ jobs:
     environment:
       name: production
     steps:
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASS }}
-          script: |
-              docker pull ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest
-              docker stop demand-mlops || true
-              docker rm demand-mlops || true
-              docker run -d \
-                --name demand-mlops \
-                -p 8000:8000 \
-                ${{ secrets.DOCKER_USERNAME }}/demand-mlops:latest
+      - name: Trigger Render Deploy
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
 
       - name: Notify failure
         if: failure()
