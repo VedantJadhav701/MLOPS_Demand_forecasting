@@ -7,12 +7,18 @@ from src.features.feature_engineering import build_features
 
 import os
 import mlflow
+from pathlib import Path
 
 # Set tracking URI to local mlruns (inside container)
 # Must point to the /app/mlruns directory where the artifacts are copied
 MODEL_NAME = "demand_forecasting_model"
-tracking_uri = os.getenv("MLFLOW_TRACKING_URI", "file:///app/mlruns")
+mlruns_dir = Path("/app/mlruns").resolve()
+tracking_uri = f"file://{mlruns_dir}"
 mlflow.set_tracking_uri(tracking_uri)
+
+print(f"DEBUG: fs check -> mlruns exists: {mlruns_dir.exists()}")
+if mlruns_dir.exists():
+    print(f"DEBUG: contents of mlruns: {list(mlruns_dir.iterdir())}")
 
 app = FastAPI()
 

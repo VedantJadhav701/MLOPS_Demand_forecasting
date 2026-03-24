@@ -103,19 +103,14 @@ jobs:
       - name: Debug Workspace (Train)
         run: ls -R
 
-      - name: Upload mlruns
-        uses: actions/upload-artifact@v4
-        with:
-          name: mlruns-artifact
-          path: mlruns
-          if-no-files-found: error
-          retention-days: 1
+      - name: Package artifacts
+        run: tar -cvf artifacts.tar mlruns/ deploy_flag.txt
 
-      - name: Upload deploy flag
+      - name: Upload artifacts.tar
         uses: actions/upload-artifact@v4
         with:
-          name: deploy-flag
-          path: deploy_flag.txt
+          name: mlops-artifacts
+          path: artifacts.tar
           retention-days: 1
 
       - name: Notify failure
@@ -132,22 +127,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download mlruns
+      - name: Download artifacts.tar
         uses: actions/download-artifact@v4
         with:
-          name: mlruns-artifact
-          path: mlruns/
-
-      - name: Verify mlruns path
-        run: |
-          ls -la
-          ls -la mlruns/
-
-      - name: Download deploy flag
-        uses: actions/download-artifact@v4
-        with:
-          name: deploy-flag
+          name: mlops-artifacts
           path: .
+
+      - name: Extract artifacts
+        run: |
+          tar -xvf artifacts.tar
+          ls -R
 
       - name: Debug Workspace (Docker)
         run: ls -R
