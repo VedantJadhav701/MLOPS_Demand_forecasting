@@ -249,12 +249,12 @@ def run_pipeline(is_retraining=False):
         # ----------------------
         # EVALUATION (STACKED)
         # ----------------------
-        val_rmse = mean_squared_error(y_val, val_preds, squared=False)
+        val_rmse = np.sqrt(mean_squared_error(y_val, val_preds))
         val_mae = mean_absolute_error(y_val, val_preds)
         val_r2 = r2_score(y_val, val_preds)
         val_mape = (abs((y_val - val_preds) / (y_val + 1e-8))).mean() * 100
 
-        test_rmse = mean_squared_error(y_test, test_preds, squared=False)
+        test_rmse = np.sqrt(mean_squared_error(y_test, test_preds))
         test_mae = mean_absolute_error(y_test, test_preds)
         test_r2 = r2_score(y_test, test_preds)
         test_mape = (abs((y_test - test_preds) / (y_test + 1e-8))).mean() * 100
